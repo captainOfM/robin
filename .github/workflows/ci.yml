@@ -1,0 +1,25 @@
+name: Slow CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  slow-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Simulate 30s CI with 5s progress logs
+        shell: bash
+        run: |
+          for second in 5 10 15 20 25 30; do
+            echo "Progress: ${second}s / 30s"
+            sleep 5
+          done
+          echo "Slow CI finished."
+
+      - name: Fail when PR title contains [fail]
+        if: contains(github.event.pull_request.title, '[fail]')
+        run: |
+          echo "PR title contains [fail] -> failing on purpose."
+          exit 1
