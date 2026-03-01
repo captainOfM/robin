@@ -4,11 +4,21 @@ on:
   pull_request:
     branches:
       - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - edited
 
 jobs:
   slow-ci:
     runs-on: ubuntu-latest
     steps:
+      - name: Debug PR context
+        run: |
+          echo "Action: ${{ github.event.action }}"
+          echo "PR title: ${{ github.event.pull_request.title }}"
+
       - name: Simulate 30s CI with 5s progress logs
         shell: bash
         run: |
@@ -18,8 +28,14 @@ jobs:
           done
           echo "Slow CI finished."
 
-      - name: Fail when PR title contains [fail]
-        if: contains(github.event.pull_request.title, '[fail]')
+      - name: Fail when PR title contains [fail] (case-insensitive)
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        shell: bash
         run: |
-          echo "PR title contains [fail] -> failing on purpose."
-          exit 1
+          shopt -s nocasematch
+          if [[ "$PR_TITLE" =~ \[fail\] ]]; then
+            echo "PR title contains [fail] -> failing on purpose."
+            exit 1
+          fi
+          echo "No [fail] marker in PR title -> keeping success."
